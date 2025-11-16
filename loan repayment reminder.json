@@ -1,0 +1,2056 @@
+{
+  "name": "Loan repayment workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 3,
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -224,
+        0
+      ],
+      "id": "e6215ba2-94aa-4790-b8ca-c2965dcd6ccf",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "114DbBgOsH_DZxWx-WR5zN1weFyxfl61MWckybTOep64",
+          "mode": "list",
+          "cachedResultName": "Loan Report",
+          "cachedResultUrl": "Your_loan_spreadsheet_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1731462196,
+          "mode": "list",
+          "cachedResultName": "Normal Loans",
+          "cachedResultUrl": "Your_loan_spreadsheet_sheet_URL"
+        },
+        "options": {
+          "outputFormatting": {
+            "values": {
+              "general": "FORMATTED_VALUE",
+              "date": "FORMATTED_STRING"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        160,
+        0
+      ],
+      "id": "bbeb0566-ff5c-469d-8bb7-9c9cbbf96736",
+      "name": "Get repayment data",
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "VS3Prkrc8HxlG4NJ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Calling OneSignal API \n**Here we get the OneSignal IDs using the users username.**"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -176
+      ],
+      "id": "62ad7475-26f2-41f4-9cd5-b2ea332d2dc5",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Get loan data from lending team\n**All active loans disbursed in 2025.** See [Here](https://docs.google.com/spreadsheets/d/1_CLwPDJbZRS0tYCwIh-1IJoDs0gxDl9EkrxMdLBieIg/edit?usp=sharing)",
+        "width": 260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -176
+      ],
+      "id": "a3eef487-a4fb-4d5b-8f27-973aad720bd5",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.onesignal.com/apps/Your_One_Signal_App_ID/users/by/external_id/{{ $json.Username }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        -16
+      ],
+      "id": "136a021e-5f9a-4951-87ea-7d87172cebb0",
+      "name": "Get OneSignal ID",
+      "executeOnce": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00047bbb-f4af-453b-95a6-e6af3c31c3c4",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2336,
+        -208
+      ],
+      "id": "4f32707d-be8f-478e-8439-e59de4386189",
+      "name": "Filter users with past due repayments"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00631906-3e35-4f46-b736-e7e691461350",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2560,
+        80
+      ],
+      "id": "b1d38d4f-d39e-43c5-9e54-2ad1b03d2961",
+      "name": "Filter users with repayments due today"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b475f67-8460-4769-a69c-55c3909de024",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        304
+      ],
+      "id": "c0261dbc-dabe-40ef-97c4-195e2eaa8a1d",
+      "name": "Filter users with repayments due in 3 days"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "43b0f8bc-ca95-44d9-a1d6-e8c24aab0bb6",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        672
+      ],
+      "id": "4f76cecb-06ed-4b63-9ae7-42806f5cb3c0",
+      "name": "Filter users with repayments due in 10 days"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "99554247-7278-40c9-ad61-83e43286921e",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2944,
+        1744
+      ],
+      "id": "923dcf29-b21c-49cf-abc8-4ffc4c7b7dd1",
+      "name": "Filter users with repayments due today1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b475f67-8460-4769-a69c-55c3909de024",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3168,
+        2160
+      ],
+      "id": "f770050c-0923-4808-8c9d-7e4b2353b30e",
+      "name": "Filter users with repayments due in 3 days1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "43b0f8bc-ca95-44d9-a1d6-e8c24aab0bb6",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3424,
+        2528
+      ],
+      "id": "8bef4479-2b11-488c-b22f-a10be6032016",
+      "name": "Filter users with repayments due in 10 days1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3fa85398-ba46-4079-b01e-b7aa9e07fd33",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        1424
+      ],
+      "id": "0af4a39e-2757-419e-bb11-884a031b5371",
+      "name": "Filter users with past due repayments2"
+    },
+    {
+      "parameters": {
+        "content": "## Emeka Okemadu",
+        "height": 120,
+        "width": 280
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        -16
+      ],
+      "id": "08f9d0be-fedd-4575-b3b6-77496b7c6d09",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ce354644-0d78-4090-a1a8-3a6b68ea0cba",
+              "name": "Year Disbursed",
+              "value": "={{ $json['Year Disbursed'] }}",
+              "type": "string"
+            },
+            {
+              "id": "203f9b09-6e71-4972-be4f-400b865fb831",
+              "name": "Status",
+              "value": "={{ $json.Status }}",
+              "type": "string"
+            },
+            {
+              "id": "82d388f1-fa5e-473d-a933-629e65b6f155",
+              "name": "Username",
+              "value": "={{ $json.Username }}",
+              "type": "string"
+            },
+            {
+              "id": "fc0ea30e-b3f1-47fb-adc8-846b4c496c9e",
+              "name": "Days to due date",
+              "value": "={{ $json['No of days to due date'] }}",
+              "type": "string"
+            },
+            {
+              "id": "97de0ac6-169d-4f53-aab4-e75ec53b5922",
+              "name": "Amount Due",
+              "value": "={{ $json['Total Due'] }}",
+              "type": "string"
+            },
+            {
+              "id": "543dfad5-ab97-4239-a2df-e7cb017aa0a5",
+              "name": "Due Date",
+              "value": "={{ $json['Date Due'] }}",
+              "type": "string"
+            },
+            {
+              "id": "619a4aa3-8c43-476f-b5f9-d4887f3f351e",
+              "name": "Is it last loan repayment? ",
+              "value": "={{ $json['Last loan repayment?'] }}",
+              "type": "string"
+            },
+            {
+              "id": "f1d8d553-e6ab-4875-ba7c-e021971cb6c0",
+              "name": "Days to due date (actual)",
+              "value": "={{ $json['Number of days actual'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        0
+      ],
+      "id": "ddb249ea-5d91-4f78-9f69-13d69cd0a3c1",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is late\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} was due {{ $('Edit Fields').item.json['Days to due date (actual)'] }} day(s) ago. Please make repayment now to avoid late fees.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        -224
+      ],
+      "id": "16ca41c3-892a-4c3d-9005-758088d3d858",
+      "name": "PN to users with past due repayments",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is due today\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} is due today. Kindly proceed to make payment.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        64
+      ],
+      "id": "3506e268-1e13-4063-9a04-1dcdfc41009a",
+      "name": "PN to users with repayments due today"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is due in 3 days\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} is due in 3 days. Kindly make payment on or before {{ $('Edit Fields').item.json['Due Date'] }} to qualify for more loans.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        288
+      ],
+      "id": "b69277f1-576e-480d-bf6c-373694a0d86e",
+      "name": "PN to users with repayments due in 3 days"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is due in 10 days\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} is due in 10 days. Kindly make payment on or before {{ $('Edit Fields').item.json['Due Date'] }} to qualify for more loans.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3680,
+        656
+      ],
+      "id": "8aa64320-a5ac-436a-b98f-eadc6a91925d",
+      "name": "PN to users with repayments due in 10 days"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f6f92741-66ba-4c63-b377-53b2ad960750",
+              "leftValue": "={{ $('Edit Fields').item.json['Is it last loan repayment? '] }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        0
+      ],
+      "id": "0f470a75-ec8c-4195-8848-c43d700b5438",
+      "name": "If condition to determine if repayment is last on the loan"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "63dc2d92-11e2-4bd0-be49-da4f83c94d37",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": -10,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2944,
+        1312
+      ],
+      "id": "130a44a6-c61b-4754-870d-e1dd6f2c635e",
+      "name": "Users with repayments past 10 days"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Warning!\" },\n  \"contents\": { \"en\": \"Your loan payment is overdue. You are paying late fees and penalties. Make payment immediately. \" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3936,
+        1072
+      ],
+      "id": "3b78de4e-501f-40ff-9f3d-e00a73ccadb9",
+      "name": "PN to users with repayment more than 10 days",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is due today\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} is due today. Kindly proceed to make payment.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3936,
+        1728
+      ],
+      "id": "f893a9bc-42e5-4ed4-b165-8d59bbd22160",
+      "name": "PN to users with repayment due today",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is late\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} was due {{ $('Edit Fields').item.json['Days to due date (actual)'] }} day(s) ago. Please make repayment now to avoid late fees.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3936,
+        1328
+      ],
+      "id": "7e1360e5-b394-4800-a4c0-dd725da28f9c",
+      "name": "PN to users with past due repayments1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is due in 3 days\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} is due in 3 days. Kindly make payment on or before {{ $('Edit Fields').item.json['Due Date'] }} to qualify for more loans.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3936,
+        2144
+      ],
+      "id": "45dfca0e-c9c5-47ac-84b8-0ab5cd87181d",
+      "name": "PN to users with repayments due in 3 days1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"en\": \"Your loan repayment is due in 10 days\" },\n  \"contents\": { \"en\": \"Your loan repayment of {{ $('Edit Fields').item.json['Amount Due'] }} is due in 10 days. Kindly make payment on or before {{ $('Edit Fields').item.json['Due Date'] }} to qualify for more loans.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3936,
+        2512
+      ],
+      "id": "3f252437-00e3-437b-a34e-6ca468afc796",
+      "name": "PN to users with repayments due in 10 days1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00047bbb-f4af-453b-95a6-e6af3c31c3c4",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        -3456
+      ],
+      "id": "3dd98018-2440-4cae-868a-c39a5a583875",
+      "name": "Filter users with past due repayments1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "00631906-3e35-4f46-b736-e7e691461350",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3360,
+        -3168
+      ],
+      "id": "a9c43ca7-fb86-4bd0-9acd-a76f06df11a6",
+      "name": "Filter users with repayments due today2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b475f67-8460-4769-a69c-55c3909de024",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3680,
+        -2944
+      ],
+      "id": "73ba453b-b43b-4c9e-8f61-87da891d1fea",
+      "name": "Filter users with repayments due in 3 days2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "43b0f8bc-ca95-44d9-a1d6-e8c24aab0bb6",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3936,
+        -2576
+      ],
+      "id": "6eaedd3d-0b0d-4aef-8d2f-2f9bb2082ddb",
+      "name": "Filter users with repayments due in 10 days2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "99554247-7278-40c9-ad61-83e43286921e",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3744,
+        -1504
+      ],
+      "id": "be7dfdc7-2468-4dcf-998d-893f8f4f3c0c",
+      "name": "Filter users with repayments due today3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b475f67-8460-4769-a69c-55c3909de024",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4000,
+        -1104
+      ],
+      "id": "44fcee3e-d3a7-4379-87eb-0a2b884b2d01",
+      "name": "Filter users with repayments due in 3 days3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "43b0f8bc-ca95-44d9-a1d6-e8c24aab0bb6",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4224,
+        -720
+      ],
+      "id": "b34efc66-8d21-4589-a66a-1534b71f8e26",
+      "name": "Filter users with repayments due in 10 days3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3fa85398-ba46-4079-b01e-b7aa9e07fd33",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3264,
+        -1824
+      ],
+      "id": "2edcd1a7-f9e5-4b67-9570-92c6d7eb938d",
+      "name": "Filter users with past due repayments3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est en retard\"},\n  \"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} était dû il y a {{ $('Edit Fields').item.json['Days to due date (actual)'] }} jour(s). Veuillez effectuer le paiement maintenant afin d’éviter des frais de retard.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4480,
+        -3472
+      ],
+      "id": "1720cd22-7973-47f2-8ed2-0968bca4b92c",
+      "name": "PN to users with past due repayments2",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est dû aujourd’hui\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} est dû aujourd’hui. Veuillez effectuer le paiement.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4480,
+        -3184
+      ],
+      "id": "12b12b57-a856-4a71-b3a6-33a203038293",
+      "name": "PN to users with repayments due today1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n \"headings\": { \"fr\": \"Votre remboursement de prêt est dû dans 3 jours\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} est dû dans 3 jours. Veuillez effectuer le paiement au plus tard le {{ $('Edit Fields').item.json['Due Date'] }} afin d’être éligible à d’autres prêts.\"},\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4480,
+        -2960
+      ],
+      "id": "781ef8a1-6c23-4409-83f6-ce7814bb452d",
+      "name": "PN to users with repayments due in 3 days2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est dû dans 10 jours\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} est dû dans 10 jours. Veuillez effectuer le paiement au plus tard le {{ $('Edit Fields').item.json['Due Date'] }} afin d’être éligible à d’autres prêts.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4480,
+        -2592
+      ],
+      "id": "271b56ec-aea2-49cc-865a-30ae3f39624a",
+      "name": "PN to users with repayments due in 10 days2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f6f92741-66ba-4c63-b377-53b2ad960750",
+              "leftValue": "={{ $('Edit Fields').item.json['Is it last loan repayment? '] }}",
+              "rightValue": "Yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2528,
+        -3216
+      ],
+      "id": "d1b66592-fd76-4e72-b1df-8efc5cacf4e4",
+      "name": "If condition to determine if repayment is last on the loan1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "63dc2d92-11e2-4bd0-be49-da4f83c94d37",
+              "leftValue": "={{ $('Edit Fields').item.json['Days to due date'] }}",
+              "rightValue": -10,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3744,
+        -1936
+      ],
+      "id": "b97da24b-49fb-41a3-b8ef-4f68e338db07",
+      "name": "Users with repayments past 10 days1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Avertissement !\" },\n\"contents\": { \"fr\": \"Votre paiement de prêt est en retard. Vous payez actuellement des frais et des pénalités de retard. Effectuez le paiement immédiatement.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        -2176
+      ],
+      "id": "7ded5746-ce7e-469d-9622-bc661b0879d1",
+      "name": "PN to users with repayment more than 10 days1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est dû aujourd’hui\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} est dû aujourd’hui. Veuillez procéder au paiement.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        -1520
+      ],
+      "id": "9cf93a17-920b-4953-96a7-fac073d83fad",
+      "name": "PN to users with repayment due today1",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est en retard\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} était dû il y a {{ $('Edit Fields').item.json['Days to due date (actual)'] }} jour(s). Veuillez effectuer le paiement maintenant afin d’éviter des frais de retard.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        -1920
+      ],
+      "id": "88891f03-c4e1-4621-b926-3a44ceb4b32b",
+      "name": "PN to users with past due repayments3",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est dû dans 3 jours\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} est dû dans 3 jours. Veuillez effectuer le paiement au plus tard le {{ $('Edit Fields').item.json['Due Date'] }} afin d’être éligible à d’autres prêts.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        -1120
+      ],
+      "id": "aeb89c3c-8cb9-4b9b-9047-eb829d795436",
+      "name": "PN to users with repayments due in 3 days3",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.onesignal.com/notifications?c=push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Your_One_Signal_API_KEY"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"app_id\": \"Your_One_Signal_App_ID\",\n  \"headings\": { \"fr\": \"Votre remboursement de prêt est dû dans 10 jours\" },\n\"contents\": { \"fr\": \"Votre remboursement de prêt de {{ $('Edit Fields').item.json['Amount Due'] }} est dû dans 10 jours. Veuillez effectuer le paiement au plus tard le {{ $('Edit Fields').item.json['Due Date'] }} afin d’être éligible à d’autres prêts.\" },\n  \"include_aliases\": {\n    \"onesignal_id\": [\"{{ $('Get OneSignal ID').item.json.identity.onesignal_id }}\"]\n  },\n\"target_channel\": \"push\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4736,
+        -736
+      ],
+      "id": "5961d578-fe17-4af6-8898-9b30dab3b967",
+      "name": "PN to users with repayments due in 10 days3",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## French users flow\n",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        -704
+      ],
+      "id": "a3f374b3-9f40-4433-8c4b-e506613b406b",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## English users flow\n",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        96
+      ],
+      "id": "05f1cde7-a784-4c46-a6a0-ce913df6030c",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8fa2dbe2-8282-487f-bbb4-42ceaf1d960f",
+              "leftValue": "={{ $json.properties.language }}",
+              "rightValue": "=fr",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        -16
+      ],
+      "id": "1c6a4949-3ed3-4454-b067-ee26906c130c",
+      "name": "English or French?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7cd95b14-2168-46cc-a6bf-7a7919e72cdd",
+              "leftValue": "={{ $json['Year Disbursed'] }}",
+              "rightValue": 2025,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "fecb3fd1-2d94-41c8-ba01-2b4d6ddfb7b8",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "Good",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "e73c38e1-57dd-4e49-a504-4b182ee1bac9",
+      "name": "2025 loan in good status?"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get repayment data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get repayment data": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get OneSignal ID": {
+      "main": [
+        [
+          {
+            "node": "English or French?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with past due repayments": {
+      "main": [
+        [
+          {
+            "node": "PN to users with past due repayments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due today",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due today": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due today",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 3 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 3 days": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 3 days",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 10 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 10 days": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 10 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due today1": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayment due today",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 3 days1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 3 days1": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 3 days1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 10 days1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 10 days1": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 10 days1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with past due repayments2": {
+      "main": [
+        [
+          {
+            "node": "Users with repayments past 10 days",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due today1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "2025 loan in good status?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If condition to determine if repayment is last on the loan": {
+      "main": [
+        [
+          {
+            "node": "Filter users with past due repayments",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with past due repayments2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Users with repayments past 10 days": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayment more than 10 days",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PN to users with past due repayments1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with past due repayments1": {
+      "main": [
+        [
+          {
+            "node": "PN to users with past due repayments2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due today2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due today2": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due today1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 3 days2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 3 days2": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 3 days2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 10 days2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 10 days2": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 10 days2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due today3": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayment due today1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 3 days3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 3 days3": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 3 days3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due in 10 days3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with repayments due in 10 days3": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayments due in 10 days3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter users with past due repayments3": {
+      "main": [
+        [
+          {
+            "node": "Users with repayments past 10 days1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with repayments due today3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If condition to determine if repayment is last on the loan1": {
+      "main": [
+        [
+          {
+            "node": "Filter users with past due repayments1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Filter users with past due repayments3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Users with repayments past 10 days1": {
+      "main": [
+        [
+          {
+            "node": "PN to users with repayment more than 10 days1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PN to users with past due repayments3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "English or French?": {
+      "main": [
+        [
+          {
+            "node": "If condition to determine if repayment is last on the loan1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If condition to determine if repayment is last on the loan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2025 loan in good status?": {
+      "main": [
+        [
+          {
+            "node": "Get OneSignal ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "0850bc17-f71f-46ff-8aa2-2e66f511bc1f",
+  "meta": {
+    "templateId": "self-building-ai-agent",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "85bc83924d0eabe2e6aeb0d4db8aaaf049e0e0f6d41ad9f9b5a6ecc0bc9e9191"
+  },
+  "id": "InvUf2hSJWCe0oMU",
+  "tags": []
+}
